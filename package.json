@@ -1,0 +1,47 @@
+{
+  "devDependencies": {
+    "@biomejs/biome": "^1.9.4",
+    "bun": "^1.2.5",
+    "husky": "^9.1.7",
+    "shx": "^0.3.4"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.6.1",
+    "@types/node": "^22.15.3",
+    "http": "^0.0.1-security",
+    "zod": "^3.24.2"
+  },
+  "name": "@lawmatics/mcp",
+  "author": "Lawmatics (https://www.lawmatics.com)",
+  "description": "Lawmatics MCP Server",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/@lawmatics/mcp-server-lawmatics.git"
+  },
+  "keywords": [
+    "lawmatics",
+    "mcp",
+    "modelcontextprotocol"
+  ],
+  "license": "MIT",
+  "version": "0.4.1",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "mcp-server-lawmatics": "dist/index.js"
+  },
+  "scripts": {
+    "inspector": "bunx @modelcontextprotocol/inspector bun dist/index.js",
+    "test": "bun test",
+    "format": "biome check --write ./",
+    "lint": "biome check ./",
+    "ts": "tsc -b",
+    "build": "bun build ./index.ts --outfile dist/index.js --target node",
+    "prepublish": "bun run build",
+    "postbuild": "shx chmod +x dist/*.js",
+    "prepare": "husky"
+  }
+}
