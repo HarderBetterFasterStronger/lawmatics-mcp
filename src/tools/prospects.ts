@@ -67,6 +67,15 @@ export class ProspectTools extends BaseTools {
 			async ({ query }) => await tools.searchProspects(query),
 		);
 
+		server.tool(
+			"find_prospect_by_name",
+			"Find a Lawmatics prospect by name (fuzzy search)",
+			{
+				name: z.string().describe("Name to search for (first name, last name, or both)"),
+			},
+			async ({ name }) => await tools.findProspectByName(name),
+		);
+
 		return tools;
 	}
 
@@ -181,6 +190,47 @@ ${prospect?.attributes?.notes ? `Notes:\n${prospect?.attributes?.notes}` : "[No 
 
 		return this.toResult(`Result (first ${prospects.length} shown of ${total} total prospects found matching "${query}"):
 ${this.formatAsProspectList(prospects)}`);
+	}
+
+	async findProspectByName(name: string) {
+		try {
+			// Note: You need to add the findProspectByName method to the LawmaticsClientWrapper class
+			// Add this method to src/client/lawmatics.ts:
+			/*
+			 * async findProspectByName(name: string) {
+			 *   const encodedName = encodeURIComponent(name);
+			 *   const url = `${this.baseUrl}/v1/prospects/find_by_name/${encodedName}`;
+			 *
+			 *   const response = await this.makeRequest({
+			 *     method: 'GET',
+			 *     url,
+			 *   });
+			 *
+			 *   return response;
+			 * }
+			 */
+			const response = await this.client.findProspectByName(name);
+			const prospect = response?.data;
+
+			if (!prospect) {
+				return this.toResult(`No prospect found matching the name: "${name}".`);
+			}
+
+			return this.toResult(`Prospect found matching name "${name}":
+
+ID: ${prospect.id}
+Name: ${prospect?.attributes?.first_name} ${prospect?.attributes?.last_name}
+Email: ${prospect?.attributes?.email || "[Not set]"}
+Phone: ${prospect?.attributes?.phone || "[Not set]"}
+Created: ${new Date(prospect?.attributes?.created_at || "").toLocaleString()}
+Updated: ${new Date(prospect?.attributes?.updated_at || "").toLocaleString()}
+
+${prospect?.attributes?.notes ? `Notes:\n${prospect?.attributes?.notes}` : "[No notes]"}`);
+		} catch (error) {
+			throw new Error(
+				`Failed to find prospect by name: "${name}". ${error instanceof Error ? error.message : String(error)}`,
+			);
+		}
 	}
 
 	private formatAsProspectList(prospects: Prospect[]): string {

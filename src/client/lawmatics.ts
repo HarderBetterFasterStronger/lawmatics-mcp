@@ -177,4 +177,23 @@ export class LawmaticsClientWrapper {
 
 		return response;
 	}
+
+	/**
+	 * Find a prospect by name using fuzzy search (case-insensitive)
+	 * @param name First name, last name, or both
+	 * @returns The closest matching prospect
+	 */
+	async findProspectByName(name: string): Promise<ApiResponse<Prospect>> {
+		const encodedName = encodeURIComponent(name);
+		const endpoint = `/prospects/find_by_name/${encodedName}`;
+
+		const response = await this.makeRequest<ApiResponse<Prospect>>(endpoint);
+
+		if (response?.data) {
+			// Update the cache with the found prospect
+			this.prospectCache.set(response.data.id, response.data);
+		}
+
+		return response;
+	}
 }
