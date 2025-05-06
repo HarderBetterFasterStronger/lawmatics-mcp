@@ -12,6 +12,8 @@
     "@modelcontextprotocol/sdk": "^1.6.1",
     "@types/node": "^22.15.3",
     "http": "^0.0.1-security",
+    "openapi-mcp-generator": "^3.0.0",
+    "postman2openapi": "^1.2.1",
     "zod": "^3.24.2"
   },
   "name": "@lawmatics/mcp",
