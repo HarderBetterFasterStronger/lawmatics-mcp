@@ -196,4 +196,23 @@ export class LawmaticsClientWrapper {
 
 		return response;
 	}
+
+	/**
+	 * Find a prospect by phone number using fuzzy search
+	 * @param phoneNumber Any valid phone number (digits will be stripped for matching)
+	 * @returns The closest matching prospect
+	 */
+	async findProspectByPhone(phoneNumber: string): Promise<ApiResponse<Prospect>> {
+		const encodedPhone = encodeURIComponent(phoneNumber);
+		const endpoint = `/prospects/find_by_phone/${encodedPhone}`;
+
+		const response = await this.makeRequest<ApiResponse<Prospect>>(endpoint);
+
+		if (response?.data) {
+			// Update the cache with the found prospect
+			this.prospectCache.set(response.data.id, response.data);
+		}
+
+		return response;
+	}
 }
