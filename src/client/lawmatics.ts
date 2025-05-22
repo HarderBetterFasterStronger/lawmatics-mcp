@@ -245,4 +245,7 @@ export class LawmaticsClientWrapper {
 
 		return response;
 	}
+
+	getStages = async (): Promise<ApiResponse<Stage[]>> =>
+		await this.makeRequest<ApiResponse<Stage[]>>("/stages?fields=all");
 }
