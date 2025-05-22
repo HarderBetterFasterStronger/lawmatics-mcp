@@ -7,6 +7,7 @@ interface ApiResponse<T> {
 		total?: number;
 		limit_per_page?: number;
 		total_entries?: number;
+		total_pages?: number;
 	};
 	links?: {
 		self?: string;
@@ -49,6 +50,17 @@ interface Stage {
 	relationships?: Record<string, UnknownValue>;
 }
 
+export interface PracticeArea {
+	id: string;
+	type: string;
+	attributes: {
+		name: string;
+		color: string;
+		created_at: string;
+		updated_at: string;
+	};
+}
+
 /**
  * This is a thin wrapper over Lawmatics API.
  *
@@ -62,11 +74,13 @@ export class LawmaticsClientWrapper {
 	private apiToken: string;
 	private prospectCache: Cache<string, Prospect>;
 	private stageCache: Cache<string, Stage>;
+	private practiceAreaCache: Cache<string, PracticeArea>;
 
 	constructor(apiToken: string) {
 		this.apiToken = apiToken;
 		this.prospectCache = new Cache();
 		this.stageCache = new Cache();
+		this.practiceAreaCache = new Cache();
 	}
 
 	private async makeRequest<T = Record<string, UnknownValue>>(
@@ -248,4 +262,33 @@ export class LawmaticsClientWrapper {
 
 	getStages = async (): Promise<ApiResponse<Stage[]>> =>
 		await this.makeRequest<ApiResponse<Stage[]>>("/stages?fields=all");
+
+	/**
+	 * Get all practice areas
+	 * @param page Page number for pagination (1-based)
+	 * @param perPage Number of items per page
+	 */
+	async getPracticeAreas(page = 1, perPage = 25): Promise<ApiResponse<PracticeArea[]>> {
+		const queryParams = new URLSearchParams({
+			page: page.toString(),
+			per_page: perPage.toString(),
+		});
+
+		const endpoint = `/practice_areas?${queryParams.toString()}`;
+		const response = await this.makeRequest<ApiResponse<PracticeArea[]>>(endpoint);
+
+		return response;
+	}
+
+	/**
+	 * Get a specific practice area by ID
+	 * @param practiceAreaId The ID of the practice area to retrieve
+	 */
+	async getPracticeArea(practiceAreaId: string): Promise<ApiResponse<PracticeArea>> {
+		const response = await this.makeRequest<ApiResponse<PracticeArea>>(
+			`/practice_areas/${practiceAreaId}`,
+		);
+
+		return response;
+	}
 }
