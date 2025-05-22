@@ -23,15 +23,110 @@ export interface Prospect {
 	attributes?: {
 		first_name?: string;
 		last_name?: string;
+		case_title?: string;
+		case_number?: string;
+		case_blurb?: string | null;
+		status?: string;
+		type_of_billing?: string | null;
+		name?: string;
 		email?: string;
-		email_address?: string;
 		phone?: string;
+		phone_number?: string;
+		email_address?: string;
+		address?: string | null;
+		birthdate?: string | null;
+		name_prefix?: string | null;
+		middle_name?: string | null;
+		name_suffix?: string | null;
+		sub_status?: string;
+		informal_name?: string | null;
+		employer?: string | null;
+		occupation?: string | null;
+		citizenship?: string | null;
+		bio?: string | null;
+		title?: string | null;
+		hobbies?: string | null;
+		social_security?: string | null;
+		age?: string | null;
+		referring_url?: string | null;
+		driver_license?: string | null;
+		gender?: string | null;
+		marital_status?: string | null;
+		timezone?: string | null;
+		estimated_value_cents?: number;
+		actual_value_cents?: number;
+		lead_cost_cents?: number;
+		date_of_last_contact?: string;
+		days_since_last_contact?: number;
+		converted_date?: string | null;
+		statute_of_limitations?: string | null;
+		utm_source?: string | null;
+		utm_campaign?: string | null;
+		utm_medium?: string | null;
+		utm_term?: string | null;
+		gclid?: string | null;
+		street?: string | null;
+		street2?: string | null;
+		city?: string | null;
+		state?: string | null;
+		zipcode?: string | null;
+		country?: string | null;
+		full_street?: string | null;
+		city_state_zip?: string | null;
+		unsubscribed?: boolean;
+		full_address?: string | null;
+		photo_url?: string | null;
+		custom_fields?: Array<{
+			id: string;
+			name: string;
+			field_type: string;
+			value: string;
+			formatted_value: string;
+		}>;
+		custom_field_values?: Record<
+			string,
+			{
+				id: string;
+				name: string;
+				field_type: string;
+				value: string;
+				formatted_value: string;
+			}
+		>;
 		created_at?: string;
 		updated_at?: string;
+		last_contacted_date?: string;
 		notes?: string;
 		[key: string]: UnknownValue;
 	};
-	relationships?: Record<string, UnknownValue>;
+	relationships?: {
+		source?: { data: { id: string; type: string } | null };
+		stage?: { data: { id: string; type: string } | null };
+		campaign?: { data: { id: string; type: string } | null };
+		practice_area?: { data: { id: string; type: string } | null };
+		salesperson?: { data: { id: string; type: string } | null };
+		lead_attorney?: { data: { id: string; type: string } | null };
+		originating_attorney?: { data: { id: string; type: string } | null };
+		owned_by?: { data: { id: string; type: string } | null };
+		created_by?: { data: { id: string; type: string } | null };
+		contact?: { data: { id: string; type: string } | null };
+		company?: { data: { id: string; type: string } | null };
+		assigned_staff?: { data: Array<{ id: string; type: string }> };
+		events?: { data: Array<{ id: string; type: string }> };
+		file_requests?: { data: Array<{ id: string; type: string }> };
+		documents?: { data: Array<{ id: string; type: string }> };
+		files?: { data: Array<{ id: string; type: string }> };
+		folders?: { data: Array<{ id: string; type: string }> };
+		notes?: { data: Array<{ id: string; type: string }> };
+		tasks?: { data: Array<{ id: string; type: string }> };
+		emails?: { data: Array<{ id: string; type: string }> };
+		phone_numbers?: { data: Array<{ id: string; type: string }> };
+		addresses?: { data: Array<{ id: string; type: string }> };
+		invoices?: { data: Array<{ id: string; type: string }> };
+		tags?: { data: Array<{ id: string; type: string }> };
+		relationships?: { data: Array<{ id: string; type: string }> };
+		[key: string]: UnknownValue;
+	};
 	url?: string;
 	[key: string]: UnknownValue;
 }
@@ -134,7 +229,8 @@ export class LawmaticsClientWrapper {
 		};
 	}
 
-	async getProspect(prospectId: string): Promise<ApiResponse<Prospect>> {
+	// @ts-ignore
+	async getProspect(prospectId: string, fields = "all"): Promise<ApiResponse<Prospect>> {
 		// Check the cache first
 		const cachedProspect = this.prospectCache.get(prospectId) as Prospect;
 		if (cachedProspect) {
@@ -142,7 +238,9 @@ export class LawmaticsClientWrapper {
 		}
 
 		// If not in cache, fetch from API
-		const response = await this.makeRequest<ApiResponse<Prospect>>(`/prospects/${prospectId}`);
+		const response = await this.makeRequest<ApiResponse<Prospect>>(
+			`/prospects/${prospectId}?fields=all`,
+		); // for now hard-coding fields
 
 		if (response?.data) {
 			// Update the cache
