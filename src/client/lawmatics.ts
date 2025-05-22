@@ -266,13 +266,6 @@ export class LawmaticsClientWrapper {
 	 * @param perPage Number of items per page
 	 */
 	async getPracticeAreas(page = 1, perPage = 25): Promise<ApiResponse<PracticeArea[]>> {
-		const cacheKey = `practice_areas_${page}_${perPage}`;
-		const cached = this.practiceAreaCache.get(cacheKey) as unknown as ApiResponse<PracticeArea[]>;
-
-		if (cached) {
-			return cached;
-		}
-
 		const queryParams = new URLSearchParams({
 			page: page.toString(),
 			per_page: perPage.toString(),
@@ -280,15 +273,6 @@ export class LawmaticsClientWrapper {
 
 		const endpoint = `/practice_areas?${queryParams.toString()}`;
 		const response = await this.makeRequest<ApiResponse<PracticeArea[]>>(endpoint);
-
-		if (response?.data) {
-			// Cache the practice areas with individual keys for direct lookup
-			for (const area of response.data) {
-				this.practiceAreaCache.set(`practice_area_${area.id}`, area);
-			}
-			// Cache the paginated response
-			this.practiceAreaCache.set(cacheKey, response as unknown as PracticeArea);
-		}
 
 		return response;
 	}
@@ -298,20 +282,9 @@ export class LawmaticsClientWrapper {
 	 * @param practiceAreaId The ID of the practice area to retrieve
 	 */
 	async getPracticeArea(practiceAreaId: string): Promise<ApiResponse<PracticeArea>> {
-		const cacheKey = `practice_area_${practiceAreaId}`;
-		const cached = this.practiceAreaCache.get(cacheKey) as unknown as ApiResponse<PracticeArea>;
-
-		if (cached) {
-			return cached;
-		}
-
 		const response = await this.makeRequest<ApiResponse<PracticeArea>>(
 			`/practice_areas/${practiceAreaId}`,
 		);
-
-		if (response?.data) {
-			this.practiceAreaCache.set(cacheKey, response.data);
-		}
 
 		return response;
 	}
