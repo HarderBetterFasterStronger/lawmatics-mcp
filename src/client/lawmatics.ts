@@ -472,6 +472,9 @@ export class LawmaticsClientWrapper {
 		return response;
 	}
 
+	getStages = async (): Promise<ApiResponse<Stage[]>> =>
+		await this.makeRequest<ApiResponse<Stage[]>>("/stages?fields=all");
+
 	/**
 	 * Get all practice areas
 	 * @param page Page number for pagination (1-based)

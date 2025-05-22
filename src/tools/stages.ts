@@ -14,6 +14,13 @@ export class StageTools extends BaseTools {
 			{ stageId: z.string().describe("The ID of the stage to get") },
 			async ({ stageId }) => await tools.getStage(stageId),
 		);
+
+		server.tool(
+			"list_stages",
+			"List all available pipeline stages",
+			{},
+			async () => await tools.getStages(),
+		);
 		return tools;
 	}
 
@@ -29,5 +36,31 @@ export class StageTools extends BaseTools {
     Updated: ${new Date(stage?.attributes?.updated_at || "").toLocaleString()}
     Color: ${stage?.attributes?.color}
     Order: ${stage?.attributes?.order}`);
+	}
+
+	async getStages(): Promise<CallToolResult> {
+		const response = await this.client.getStages();
+		const stages = response?.data;
+
+		if (!stages || !Array.isArray(stages)) {
+			throw new Error("Failed to fetch stages");
+		}
+
+		if (stages.length === 0) {
+			return this.toResult("No stages found.");
+		}
+
+		const stagesList = stages
+			.map((stage) => {
+				return `Stage ID: ${stage.id}
+    Name: ${stage?.attributes?.name}
+    Color: ${stage?.attributes?.color}
+    Order: ${stage?.attributes?.order}`;
+			})
+			.join("\n\n");
+
+		return this.toResult(`Available Stages (${stages.length}):
+
+${stagesList}`);
 	}
 }
