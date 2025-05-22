@@ -4,6 +4,7 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import { name, version } from "../package.json";
 
 import { ProspectTools } from "./tools/prospects";
+import { StageTools } from "./tools/stages";
 
 let apiToken = process.env.LAWMATICS_API_TOKEN;
 
@@ -28,8 +29,9 @@ const server = new McpServer({
 
 const client = new LawmaticsClientWrapper(apiToken);
 
-// Set up the prospect tools
+// Set up the tools
 ProspectTools.create(client, server);
+StageTools.create(client, server);
 
 async function startServer() {
 	try {
