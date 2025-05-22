@@ -5,6 +5,7 @@ interface ApiResponse<T> {
 	data: T;
 	meta?: {
 		total?: number;
+		total_pages?: number;
 		limit_per_page?: number;
 		total_entries?: number;
 	};
@@ -279,16 +280,89 @@ export class LawmaticsClientWrapper {
 		return response;
 	}
 
-	async searchProspects(query: string): Promise<ApiResponse<Prospect[]>> {
-		// This is a simplified implementation - in reality you'd probably
-		// need to use a specific search endpoint or filter the results
-		const queryParams = new URLSearchParams();
-		queryParams.append("q", query);
+	async searchProspects(
+		query: string,
+		options?: {
+			page?: number; // Starting page (defaults to 1)
+			limit?: number; // Results per page (defaults to API's default)
+			maxPages?: number; // Maximum pages to fetch (defaults to 5)
+		},
+	): Promise<{
+		prospects: Prospect[];
+		pagination: {
+			currentPage: number;
+			totalPages: number;
+			totalEntries: number;
+			hasMore: boolean;
+			tooManyResults: boolean;
+		};
+	}> {
+		const {
+			page = 1,
+			limit,
+			maxPages = 5, // Default max pages to 5
+		} = options || {};
 
-		const endpoint = `/prospects?${queryParams.toString()}`;
-		const response = await this.makeRequest<ApiResponse<Prospect[]>>(endpoint);
+		// Initialize results
+		let allProspects: Prospect[] = [];
+		let currentPage = page;
+		let hasMore = true;
+		let tooManyResults = false;
+		let requestCount = 0;
 
-		return response;
+		// Pagination stats
+		let totalPages = 0;
+		let totalEntries = 0;
+
+		// Continue fetching pages until we reach the limit
+		while (hasMore && currentPage <= maxPages) {
+			// Track the number of network requests
+			requestCount++;
+
+			const queryParams = new URLSearchParams();
+			queryParams.append("q", query);
+			queryParams.append("fields", "all");
+			queryParams.append("page", currentPage.toString());
+
+			if (limit) {
+				queryParams.append("limit", limit.toString());
+			}
+
+			const endpoint = `/prospects?${queryParams.toString()}`;
+			const response = await this.makeRequest<ApiResponse<Prospect[]>>(endpoint);
+
+			// Add the current page's prospects to our results
+			if (response?.data) {
+				allProspects = [...allProspects, ...response.data];
+			}
+
+			// Update pagination info from response metadata
+			if (response?.meta) {
+				totalPages = response.meta.total_pages || 0;
+				totalEntries = response.meta.total_entries || 0;
+			}
+
+			// Check if there are more pages
+			hasMore = !!response?.links?.next && currentPage < totalPages;
+			currentPage++;
+
+			// If we've reached our max request limit but there are still more pages
+			if (requestCount >= maxPages && hasMore) {
+				tooManyResults = true;
+				break;
+			}
+		}
+
+		return {
+			prospects: allProspects,
+			pagination: {
+				currentPage: currentPage - 1, // Return the last page we actually fetched
+				totalPages,
+				totalEntries,
+				hasMore,
+				tooManyResults,
+			},
+		};
 	}
 
 	/**
@@ -298,7 +372,26 @@ export class LawmaticsClientWrapper {
 	 */
 	async findProspectByName(name: string): Promise<ApiResponse<Prospect>> {
 		const encodedName = encodeURIComponent(name);
-		const endpoint = `/prospects/find_by_name/${encodedName}`;
+		const endpoint = `/prospects/find_by_name/${encodedName}?fields=all`;
+
+		const response = await this.makeRequest<ApiResponse<Prospect>>(endpoint);
+
+		if (response?.data) {
+			// Update the cache with the found prospect
+			this.prospectCache.set(response.data.id, response.data);
+		}
+
+		return response;
+	}
+
+	/**
+	 * Find a prospect by email address using fuzzy search
+	 * @param email Email address to search for
+	 * @returns The closest matching prospect
+	 */
+	async findProspectByEmail(email: string): Promise<ApiResponse<Prospect>> {
+		const encodedEmail = encodeURIComponent(email);
+		const endpoint = `/prospects/find_by_email/${encodedEmail}?fields=all`;
 
 		const response = await this.makeRequest<ApiResponse<Prospect>>(endpoint);
 
@@ -317,7 +410,7 @@ export class LawmaticsClientWrapper {
 	 */
 	async findProspectByPhone(phoneNumber: string): Promise<ApiResponse<Prospect>> {
 		const encodedPhone = encodeURIComponent(phoneNumber);
-		const endpoint = `/prospects/find_by_phone/${encodedPhone}`;
+		const endpoint = `/prospects/find_by_phone/${encodedPhone}?fields=all`;
 
 		const response = await this.makeRequest<ApiResponse<Prospect>>(endpoint);
 
@@ -325,6 +418,27 @@ export class LawmaticsClientWrapper {
 			// Update the cache with the found prospect
 			this.prospectCache.set(response.data.id, response.data);
 		}
+
+		return response;
+	}
+
+	/**
+	 * Find prospects by case title using filter
+	 * @param caseTitle Case title to search for
+	 * @returns Prospects matching the case title
+	 */
+	async findProspectByCaseTitle(caseTitle: string): Promise<ApiResponse<Prospect[]>> {
+		const queryParams = new URLSearchParams();
+		queryParams.append("filter_by", "case_title");
+		queryParams.append("filter_on", caseTitle);
+		queryParams.append("filter_with", "ilike");
+		queryParams.append("fields", "all");
+
+		const endpoint = `/prospects?${queryParams.toString()}`;
+		const response = await this.makeRequest<ApiResponse<Prospect[]>>(endpoint);
+
+		// For case title searches, we might get multiple results
+		// so we don't update the cache like with the single-result endpoints
 
 		return response;
 	}
