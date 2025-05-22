@@ -4,6 +4,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
 import { BaseTools } from "./base";
+import { formatProspectDetails } from "./prospect-formatter";
 
 // Define a type for unknown properties that could be any value
 type UnknownValue = string | number | boolean | object | null | undefined;
@@ -14,14 +15,22 @@ export class ProspectTools extends BaseTools {
 
 		server.tool(
 			"get_prospect",
-			"Get a Lawmatics prospect by ID",
-			{ prospectId: z.string().describe("The ID of the prospect to get") },
-			async ({ prospectId }) => await tools.getProspect(prospectId),
+			"Get a Lawmatics matter / prospect by ID",
+			{
+				prospectId: z.string().describe("The ID of the matter / prospect to get"),
+				fields: z
+					.string()
+					.optional()
+					.describe(
+						"Comma-separated list of fields to include or 'all' for all fields, defaults to 'all' if not provided",
+					),
+			},
+			async ({ prospectId, fields }) => await tools.getProspect(prospectId, fields),
 		);
 
 		server.tool(
 			"list_prospects_with_optional_filtering",
-			"List Lawmatics prospects with optional filtering",
+			"List Lawmatics matters / prospects with optional filtering",
 			{
 				fields: z
 					.string()
@@ -33,7 +42,7 @@ export class ProspectTools extends BaseTools {
 
 		server.tool(
 			"create_prospect",
-			"Create a new Lawmatics prospect",
+			"Create a new Lawmatics matter / prospect",
 			{
 				firstName: z.string().describe("First name of the prospect"),
 				lastName: z.string().describe("Last name of the prospect"),
@@ -46,9 +55,9 @@ export class ProspectTools extends BaseTools {
 
 		server.tool(
 			"update_prospect",
-			"Update an existing Lawmatics prospect",
+			"Update an existing Lawmatics matter / prospect",
 			{
-				prospectId: z.string().describe("The ID of the prospect to update"),
+				prospectId: z.string().describe("The ID of the matter / prospect to update"),
 				firstName: z.string().optional().describe("First name of the prospect"),
 				lastName: z.string().optional().describe("Last name of the prospect"),
 				email: z.string().optional().describe("Email address of the prospect"),
@@ -60,7 +69,7 @@ export class ProspectTools extends BaseTools {
 
 		server.tool(
 			"search_prospects",
-			"Search for Lawmatics prospects",
+			"Search for Lawmatics matters / prospects with pagination support",
 			{
 				query: z.string().describe("Search query to find matching prospects"),
 			},
@@ -69,7 +78,7 @@ export class ProspectTools extends BaseTools {
 
 		server.tool(
 			"find_prospect_by_name",
-			"Find a Lawmatics prospect by name (fuzzy search)",
+			"Find a Lawmatics matter / prospect by name (fuzzy search)",
 			{
 				name: z.string().describe("Name to search for (first name, last name, or both)"),
 			},
@@ -77,12 +86,30 @@ export class ProspectTools extends BaseTools {
 		);
 
 		server.tool(
+			"find_prospect_by_email",
+			"Find a Lawmatics matter / prospect by email address (fuzzy search)",
+			{
+				email: z.string().describe("Email address to search for"),
+			},
+			async ({ email }) => await tools.findProspectByEmail(email),
+		);
+
+		server.tool(
 			"find_prospect_by_phone",
-			"Find a Lawmatics prospect by phone number (fuzzy search)",
+			"Find a Lawmatics matter / prospect by phone number (fuzzy search)",
 			{
 				phone: z.string().describe("Phone number to search for"),
 			},
 			async ({ phone }) => await tools.findProspectByPhone(phone),
+		);
+
+		server.tool(
+			"find_prospect_by_case_title",
+			"Find Lawmatics matters / prospects by case title",
+			{
+				caseTitle: z.string().describe("Case title to search for"),
+			},
+			async ({ caseTitle }) => await tools.findProspectByCaseTitle(caseTitle),
 		);
 
 		return tools;
@@ -97,32 +124,26 @@ export class ProspectTools extends BaseTools {
 		const total = response?.meta?.total || 0;
 
 		if (!prospects || !Array.isArray(prospects)) {
-			throw new Error("Failed to fetch prospects");
+			throw new Error("Failed to fetch matters / prospects");
 		}
 
 		if (prospects.length === 0) {
-			return this.toResult("No prospects found.");
+			return this.toResult("No matters / prospects found.");
 		}
 
-		return this.toResult(`Result (${prospects.length} prospects found${total > prospects.length ? ` of ${total} total` : ""}):
+		return this.toResult(`Result (${prospects.length} matters / prospects found${total > prospects.length ? ` of ${total} total` : ""}):
 ${this.formatAsProspectList(prospects)}`);
 	}
 
-	async getProspect(prospectId: string) {
-		const response = await this.client.getProspect(prospectId);
+	async getProspect(prospectId: string, fields?: string) {
+		const response = await this.client.getProspect(prospectId, fields);
 		const prospect = response?.data;
 
-		if (!prospect) throw new Error(`Failed to retrieve Lawmatics prospect with ID: ${prospectId}`);
+		if (!prospect)
+			throw new Error(`Failed to retrieve Lawmatics matter / prospect with ID: ${prospectId}`);
 
-		return this.toResult(`Prospect: ${prospectId}
-${response.data.url ? `URL: ${response.data.url}\n` : ""}
-Name: ${prospect?.attributes?.first_name} ${prospect?.attributes?.last_name}
-Email: ${prospect?.attributes?.email || "[Not set]"}
-Phone: ${prospect?.attributes?.phone || "[Not set]"}
-Created: ${new Date(prospect?.attributes?.created_at || "").toLocaleString()}
-Updated: ${new Date(prospect?.attributes?.updated_at || "").toLocaleString()}
-
-${prospect?.attributes?.notes ? `Notes:\n${prospect?.attributes?.notes}` : "[No notes]"}`);
+		const formattedOutput = formatProspectDetails(prospect);
+		return this.toResult(formattedOutput);
 	}
 
 	async createProspect({
@@ -149,9 +170,9 @@ ${prospect?.attributes?.notes ? `Notes:\n${prospect?.attributes?.notes}` : "[No 
 		const response = await this.client.createProspect(prospectData);
 		const prospect = response?.data;
 
-		if (!prospect) throw new Error("Failed to create prospect");
+		if (!prospect) throw new Error("Failed to create matter / prospect");
 
-		return this.toResult(`Prospect created with ID: ${prospect.id}.`);
+		return this.toResult(`Matter / Prospect created with ID: ${prospect.id}.`);
 	}
 
 	async updateProspect({
@@ -179,26 +200,34 @@ ${prospect?.attributes?.notes ? `Notes:\n${prospect?.attributes?.notes}` : "[No 
 		const response = await this.client.updateProspect(prospectId, updateData);
 		const prospect = response?.data;
 
-		if (!prospect) throw new Error(`Failed to update prospect with ID: ${prospectId}`);
+		if (!prospect) throw new Error(`Failed to update matter / prospect with ID: ${prospectId}`);
 
-		return this.toResult(`Prospect with ID ${prospectId} updated successfully.`);
+		return this.toResult(`Matter / Prospect with ID ${prospectId} updated successfully.`);
 	}
 
 	async searchProspects(query: string) {
 		const response = await this.client.searchProspects(query);
-		const prospects = response?.data;
-		const total = response?.meta?.total || 0;
+
+		const { prospects, pagination } = response;
+		const { totalEntries, tooManyResults } = pagination;
 
 		if (!prospects || !Array.isArray(prospects)) {
-			throw new Error(`Failed to search for prospects matching your query: "${query}"`);
+			throw new Error(`Failed to search for matters / prospects matching your query: "${query}"`);
 		}
 
 		if (prospects.length === 0) {
-			return this.toResult(`Result: No prospects found.`);
+			return this.toResult(`Result: No matters / prospects found.`);
 		}
 
-		return this.toResult(`Result (first ${prospects.length} shown of ${total} total prospects found matching "${query}"):
-${this.formatAsProspectList(prospects)}`);
+		let resultMessage = `Result (${prospects.length} shown of ${totalEntries} total matters / prospects found matching "${query}")`;
+
+		if (tooManyResults) {
+			resultMessage += `\nToo many results found. Only showing first ${prospects.length} results. Please refine your search query. You can always search using the find matter / prospect by email or find matter / prospect by phone number tool for better accuracy.`;
+		}
+
+		return this.toResult(
+			`${resultMessage}\n${this.formatAsProspectList(prospects, { truncate: true })}`,
+		);
 	}
 
 	async findProspectByName(name: string) {
@@ -207,22 +236,36 @@ ${this.formatAsProspectList(prospects)}`);
 			const prospect = response?.data;
 
 			if (!prospect) {
-				return this.toResult(`No prospect found matching the name: "${name}".`);
+				return this.toResult(`No matter / prospect found matching the name: "${name}".`);
 			}
 
-			return this.toResult(`Prospect found matching name "${name}":
-
-ID: ${prospect.id}
-Name: ${prospect?.attributes?.first_name} ${prospect?.attributes?.last_name}
-Email: ${prospect?.attributes?.email || "[Not set]"}
-Phone: ${prospect?.attributes?.phone || "[Not set]"}
-Created: ${new Date(prospect?.attributes?.created_at || "").toLocaleString()}
-Updated: ${new Date(prospect?.attributes?.updated_at || "").toLocaleString()}
-
-${prospect?.attributes?.notes ? `Notes:\n${prospect?.attributes?.notes}` : "[No notes]"}`);
+			const formattedOutput = formatProspectDetails(prospect);
+			return this.toResult(
+				`Matter / Prospect found matching name "${name}":\n\n${formattedOutput}`,
+			);
 		} catch (error) {
 			throw new Error(
-				`Failed to find prospect by name: "${name}". ${error instanceof Error ? error.message : String(error)}`,
+				`Failed to find matter / prospect by name: "${name}". ${error instanceof Error ? error.message : String(error)}`,
+			);
+		}
+	}
+
+	async findProspectByEmail(email: string) {
+		try {
+			const response = await this.client.findProspectByEmail(email);
+			const prospect = response?.data;
+
+			if (!prospect) {
+				return this.toResult(`No matter / prospect found matching the email address: "${email}".`);
+			}
+
+			const formattedOutput = formatProspectDetails(prospect);
+			return this.toResult(
+				`Matter / Prospect found matching email address "${email}":\n\n${formattedOutput}`,
+			);
+		} catch (error) {
+			throw new Error(
+				`Failed to find matter / prospect by email: "${email}". ${error instanceof Error ? error.message : String(error)}`,
 			);
 		}
 	}
@@ -233,35 +276,52 @@ ${prospect?.attributes?.notes ? `Notes:\n${prospect?.attributes?.notes}` : "[No 
 			const prospect = response?.data;
 
 			if (!prospect) {
-				return this.toResult(`No prospect found matching the phone number: "${phone}".`);
+				return this.toResult(`No matter / prospect found matching the phone number: "${phone}".`);
 			}
 
-			return this.toResult(`Prospect found matching phone number "${phone}":
-
-ID: ${prospect.id}
-Name: ${prospect?.attributes?.first_name} ${prospect?.attributes?.last_name}
-Email: ${prospect?.attributes?.email || "[Not set]"}
-Phone: ${prospect?.attributes?.phone || "[Not set]"}
-Created: ${new Date(prospect?.attributes?.created_at || "").toLocaleString()}
-Updated: ${new Date(prospect?.attributes?.updated_at || "").toLocaleString()}
-
-${prospect?.attributes?.notes ? `Notes:\n${prospect?.attributes?.notes}` : "[No notes]"}`);
+			const formattedOutput = formatProspectDetails(prospect);
+			return this.toResult(
+				`Matter / Prospect found matching phone number "${phone}":\n\n${formattedOutput}`,
+			);
 		} catch (error) {
 			throw new Error(
-				`Failed to find prospect by phone: "${phone}". ${error instanceof Error ? error.message : String(error)}`,
+				`Failed to find matter / prospect by phone: "${phone}". ${error instanceof Error ? error.message : String(error)}`,
 			);
 		}
 	}
 
-	private formatAsProspectList(prospects: Prospect[]): string {
+	async findProspectByCaseTitle(caseTitle: string) {
+		try {
+			const response = await this.client.findProspectByCaseTitle(caseTitle);
+			const prospects = response?.data;
+
+			if (!prospects || !Array.isArray(prospects) || prospects.length === 0) {
+				return this.toResult(`No matters / prospects found matching case title: "${caseTitle}".`);
+			}
+
+			const totalFound = prospects.length;
+			const resultMessage = `Found ${totalFound} matter${totalFound !== 1 ? "s" : ""} / prospect${totalFound !== 1 ? "s" : ""} matching case title "${caseTitle}":`;
+
+			return this.toResult(`${resultMessage}\n${this.formatAsProspectList(prospects)}`);
+		} catch (error) {
+			throw new Error(
+				`Failed to find matters / prospects by case title: "${caseTitle}". ${error instanceof Error ? error.message : String(error)}`,
+			);
+		}
+	}
+	private formatAsProspectList(
+		prospects: Prospect[],
+		options: { truncate?: boolean } = {},
+	): string {
+		if (prospects.length === 0) {
+			return "No prospects found.";
+		}
+
 		return prospects
 			.map((prospect) => {
-				const attrs = prospect.attributes || {};
-				const firstName = attrs.first_name || "";
-				const lastName = attrs.last_name || "";
-				const email = attrs.email_address || attrs.email || "No email";
-				return `- ${prospect.id}: ${firstName} ${lastName} (${email})`;
+				const fullDetails = formatProspectDetails(prospect);
+				return `---\n${options?.truncate ? fullDetails.split("\n").slice(0, 10).join("\n") : fullDetails}\n---`;
 			})
-			.join("\n");
+			.join("\n\n");
 	}
 }

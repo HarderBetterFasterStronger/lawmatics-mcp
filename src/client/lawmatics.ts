@@ -5,6 +5,7 @@ interface ApiResponse<T> {
 	data: T;
 	meta?: {
 		total?: number;
+		total_pages?: number;
 		limit_per_page?: number;
 		total_entries?: number;
 		total_pages?: number;
@@ -24,15 +25,110 @@ export interface Prospect {
 	attributes?: {
 		first_name?: string;
 		last_name?: string;
+		case_title?: string;
+		case_number?: string;
+		case_blurb?: string | null;
+		status?: string;
+		type_of_billing?: string | null;
+		name?: string;
 		email?: string;
-		email_address?: string;
 		phone?: string;
+		phone_number?: string;
+		email_address?: string;
+		address?: string | null;
+		birthdate?: string | null;
+		name_prefix?: string | null;
+		middle_name?: string | null;
+		name_suffix?: string | null;
+		sub_status?: string;
+		informal_name?: string | null;
+		employer?: string | null;
+		occupation?: string | null;
+		citizenship?: string | null;
+		bio?: string | null;
+		title?: string | null;
+		hobbies?: string | null;
+		social_security?: string | null;
+		age?: string | null;
+		referring_url?: string | null;
+		driver_license?: string | null;
+		gender?: string | null;
+		marital_status?: string | null;
+		timezone?: string | null;
+		estimated_value_cents?: number;
+		actual_value_cents?: number;
+		lead_cost_cents?: number;
+		date_of_last_contact?: string;
+		days_since_last_contact?: number;
+		converted_date?: string | null;
+		statute_of_limitations?: string | null;
+		utm_source?: string | null;
+		utm_campaign?: string | null;
+		utm_medium?: string | null;
+		utm_term?: string | null;
+		gclid?: string | null;
+		street?: string | null;
+		street2?: string | null;
+		city?: string | null;
+		state?: string | null;
+		zipcode?: string | null;
+		country?: string | null;
+		full_street?: string | null;
+		city_state_zip?: string | null;
+		unsubscribed?: boolean;
+		full_address?: string | null;
+		photo_url?: string | null;
+		custom_fields?: Array<{
+			id: string;
+			name: string;
+			field_type: string;
+			value: string;
+			formatted_value: string;
+		}>;
+		custom_field_values?: Record<
+			string,
+			{
+				id: string;
+				name: string;
+				field_type: string;
+				value: string;
+				formatted_value: string;
+			}
+		>;
 		created_at?: string;
 		updated_at?: string;
+		last_contacted_date?: string;
 		notes?: string;
 		[key: string]: UnknownValue;
 	};
-	relationships?: Record<string, UnknownValue>;
+	relationships?: {
+		source?: { data: { id: string; type: string } | null };
+		stage?: { data: { id: string; type: string } | null };
+		campaign?: { data: { id: string; type: string } | null };
+		practice_area?: { data: { id: string; type: string } | null };
+		salesperson?: { data: { id: string; type: string } | null };
+		lead_attorney?: { data: { id: string; type: string } | null };
+		originating_attorney?: { data: { id: string; type: string } | null };
+		owned_by?: { data: { id: string; type: string } | null };
+		created_by?: { data: { id: string; type: string } | null };
+		contact?: { data: { id: string; type: string } | null };
+		company?: { data: { id: string; type: string } | null };
+		assigned_staff?: { data: Array<{ id: string; type: string }> };
+		events?: { data: Array<{ id: string; type: string }> };
+		file_requests?: { data: Array<{ id: string; type: string }> };
+		documents?: { data: Array<{ id: string; type: string }> };
+		files?: { data: Array<{ id: string; type: string }> };
+		folders?: { data: Array<{ id: string; type: string }> };
+		notes?: { data: Array<{ id: string; type: string }> };
+		tasks?: { data: Array<{ id: string; type: string }> };
+		emails?: { data: Array<{ id: string; type: string }> };
+		phone_numbers?: { data: Array<{ id: string; type: string }> };
+		addresses?: { data: Array<{ id: string; type: string }> };
+		invoices?: { data: Array<{ id: string; type: string }> };
+		tags?: { data: Array<{ id: string; type: string }> };
+		relationships?: { data: Array<{ id: string; type: string }> };
+		[key: string]: UnknownValue;
+	};
 	url?: string;
 	[key: string]: UnknownValue;
 }
@@ -148,7 +244,8 @@ export class LawmaticsClientWrapper {
 		};
 	}
 
-	async getProspect(prospectId: string): Promise<ApiResponse<Prospect>> {
+	// @ts-ignore
+	async getProspect(prospectId: string, fields = "all"): Promise<ApiResponse<Prospect>> {
 		// Check the cache first
 		const cachedProspect = this.prospectCache.get(prospectId) as Prospect;
 		if (cachedProspect) {
@@ -156,7 +253,9 @@ export class LawmaticsClientWrapper {
 		}
 
 		// If not in cache, fetch from API
-		const response = await this.makeRequest<ApiResponse<Prospect>>(`/prospects/${prospectId}`);
+		const response = await this.makeRequest<ApiResponse<Prospect>>(
+			`/prospects/${prospectId}?fields=all`,
+		); // for now hard-coding fields
 
 		if (response?.data) {
 			// Update the cache
@@ -195,16 +294,89 @@ export class LawmaticsClientWrapper {
 		return response;
 	}
 
-	async searchProspects(query: string): Promise<ApiResponse<Prospect[]>> {
-		// This is a simplified implementation - in reality you'd probably
-		// need to use a specific search endpoint or filter the results
-		const queryParams = new URLSearchParams();
-		queryParams.append("q", query);
+	async searchProspects(
+		query: string,
+		options?: {
+			page?: number; // Starting page (defaults to 1)
+			limit?: number; // Results per page (defaults to API's default)
+			maxPages?: number; // Maximum pages to fetch (defaults to 5)
+		},
+	): Promise<{
+		prospects: Prospect[];
+		pagination: {
+			currentPage: number;
+			totalPages: number;
+			totalEntries: number;
+			hasMore: boolean;
+			tooManyResults: boolean;
+		};
+	}> {
+		const {
+			page = 1,
+			limit,
+			maxPages = 5, // Default max pages to 5
+		} = options || {};
 
-		const endpoint = `/prospects?${queryParams.toString()}`;
-		const response = await this.makeRequest<ApiResponse<Prospect[]>>(endpoint);
+		// Initialize results
+		let allProspects: Prospect[] = [];
+		let currentPage = page;
+		let hasMore = true;
+		let tooManyResults = false;
+		let requestCount = 0;
 
-		return response;
+		// Pagination stats
+		let totalPages = 0;
+		let totalEntries = 0;
+
+		// Continue fetching pages until we reach the limit
+		while (hasMore && currentPage <= maxPages) {
+			// Track the number of network requests
+			requestCount++;
+
+			const queryParams = new URLSearchParams();
+			queryParams.append("q", query);
+			queryParams.append("fields", "all");
+			queryParams.append("page", currentPage.toString());
+
+			if (limit) {
+				queryParams.append("limit", limit.toString());
+			}
+
+			const endpoint = `/prospects?${queryParams.toString()}`;
+			const response = await this.makeRequest<ApiResponse<Prospect[]>>(endpoint);
+
+			// Add the current page's prospects to our results
+			if (response?.data) {
+				allProspects = [...allProspects, ...response.data];
+			}
+
+			// Update pagination info from response metadata
+			if (response?.meta) {
+				totalPages = response.meta.total_pages || 0;
+				totalEntries = response.meta.total_entries || 0;
+			}
+
+			// Check if there are more pages
+			hasMore = !!response?.links?.next && currentPage < totalPages;
+			currentPage++;
+
+			// If we've reached our max request limit but there are still more pages
+			if (requestCount >= maxPages && hasMore) {
+				tooManyResults = true;
+				break;
+			}
+		}
+
+		return {
+			prospects: allProspects,
+			pagination: {
+				currentPage: currentPage - 1, // Return the last page we actually fetched
+				totalPages,
+				totalEntries,
+				hasMore,
+				tooManyResults,
+			},
+		};
 	}
 
 	/**
@@ -214,7 +386,26 @@ export class LawmaticsClientWrapper {
 	 */
 	async findProspectByName(name: string): Promise<ApiResponse<Prospect>> {
 		const encodedName = encodeURIComponent(name);
-		const endpoint = `/prospects/find_by_name/${encodedName}`;
+		const endpoint = `/prospects/find_by_name/${encodedName}?fields=all`;
+
+		const response = await this.makeRequest<ApiResponse<Prospect>>(endpoint);
+
+		if (response?.data) {
+			// Update the cache with the found prospect
+			this.prospectCache.set(response.data.id, response.data);
+		}
+
+		return response;
+	}
+
+	/**
+	 * Find a prospect by email address using fuzzy search
+	 * @param email Email address to search for
+	 * @returns The closest matching prospect
+	 */
+	async findProspectByEmail(email: string): Promise<ApiResponse<Prospect>> {
+		const encodedEmail = encodeURIComponent(email);
+		const endpoint = `/prospects/find_by_email/${encodedEmail}?fields=all`;
 
 		const response = await this.makeRequest<ApiResponse<Prospect>>(endpoint);
 
@@ -233,7 +424,7 @@ export class LawmaticsClientWrapper {
 	 */
 	async findProspectByPhone(phoneNumber: string): Promise<ApiResponse<Prospect>> {
 		const encodedPhone = encodeURIComponent(phoneNumber);
-		const endpoint = `/prospects/find_by_phone/${encodedPhone}`;
+		const endpoint = `/prospects/find_by_phone/${encodedPhone}?fields=all`;
 
 		const response = await this.makeRequest<ApiResponse<Prospect>>(endpoint);
 
@@ -241,6 +432,27 @@ export class LawmaticsClientWrapper {
 			// Update the cache with the found prospect
 			this.prospectCache.set(response.data.id, response.data);
 		}
+
+		return response;
+	}
+
+	/**
+	 * Find prospects by case title using filter
+	 * @param caseTitle Case title to search for
+	 * @returns Prospects matching the case title
+	 */
+	async findProspectByCaseTitle(caseTitle: string): Promise<ApiResponse<Prospect[]>> {
+		const queryParams = new URLSearchParams();
+		queryParams.append("filter_by", "case_title");
+		queryParams.append("filter_on", caseTitle);
+		queryParams.append("filter_with", "ilike");
+		queryParams.append("fields", "all");
+
+		const endpoint = `/prospects?${queryParams.toString()}`;
+		const response = await this.makeRequest<ApiResponse<Prospect[]>>(endpoint);
+
+		// For case title searches, we might get multiple results
+		// so we don't update the cache like with the single-result endpoints
 
 		return response;
 	}
