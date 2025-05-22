@@ -36,6 +36,19 @@ export interface Prospect {
 	[key: string]: UnknownValue;
 }
 
+interface Stage {
+	id: string;
+	type: "stage";
+	attributes?: {
+		name: string;
+		color: string;
+		order: number;
+		created_at?: string;
+		updated_at?: string;
+	};
+	relationships?: Record<string, UnknownValue>;
+}
+
 /**
  * This is a thin wrapper over Lawmatics API.
  *
@@ -48,10 +61,12 @@ export class LawmaticsClientWrapper {
 	private baseUrl = "https://api.lawmatics.com/v1";
 	private apiToken: string;
 	private prospectCache: Cache<string, Prospect>;
+	private stageCache: Cache<string, Stage>;
 
 	constructor(apiToken: string) {
 		this.apiToken = apiToken;
 		this.prospectCache = new Cache();
+		this.stageCache = new Cache();
 	}
 
 	private async makeRequest<T = Record<string, UnknownValue>>(
@@ -211,6 +226,21 @@ export class LawmaticsClientWrapper {
 		if (response?.data) {
 			// Update the cache with the found prospect
 			this.prospectCache.set(response.data.id, response.data);
+		}
+
+		return response;
+	}
+
+	async getStage(stageId: string): Promise<ApiResponse<Stage>> {
+		const cachedStage = this.stageCache.get(stageId) as Stage;
+		if (cachedStage) {
+			return { data: cachedStage };
+		}
+
+		const response = await this.makeRequest<ApiResponse<Stage>>(`/stages/${stageId}?fields=all`);
+
+		if (response?.data) {
+			this.stageCache.set(stageId, response.data);
 		}
 
 		return response;
