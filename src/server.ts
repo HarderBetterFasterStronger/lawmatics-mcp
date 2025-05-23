@@ -6,6 +6,7 @@ import { name, version } from "../package.json";
 import { PracticeAreaTools } from "./tools/practice-areas";
 import { ProspectTools } from "./tools/prospects";
 import { StageTools } from "./tools/stages";
+import { DocumentTools } from "./tools/documents";
 
 let apiToken = process.env.LAWMATICS_API_TOKEN;
 
@@ -34,6 +35,7 @@ const client = new LawmaticsClientWrapper(apiToken);
 ProspectTools.create(client, server);
 StageTools.create(client, server);
 PracticeAreaTools.create(client, server);
+DocumentTools.create(client, server);
 
 async function startServer() {
 	try {
