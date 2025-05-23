@@ -390,7 +390,7 @@ export class LawmaticsClientWrapper {
 		data: Record<string, UnknownValue>,
 	): Promise<ApiResponse<Prospect>> {
 		const response = await this.makeRequest<ApiResponse<Prospect>>(
-			`/matters/${prospectId}`,
+			`/prospects/${prospectId}`,
 			"PUT",
 			data,
 		);
