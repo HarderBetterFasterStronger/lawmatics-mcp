@@ -1,0 +1,43 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Lawmatics MCP Server
+
+Resources:
+  LawmaticsMcpFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./dist
+      Handler: lambda.handler
+      Runtime: nodejs22.x
+      Timeout: 900
+      MemorySize: 256
+      Environment:
+        Variables:
+          LAWMATICS_API_TOKEN: !Ref LawmaticsApiToken
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            Path: /modelcontextprotocol
+            Method: post
+            RestApiId: !Ref LawmaticsApi
+
+  LawmaticsApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: prod
+      Cors:
+        AllowMethods: "'POST, OPTIONS'"
+        AllowHeaders: "'Content-Type'"
+        AllowOrigin: "'*'"
+
+Parameters:
+  LawmaticsApiToken:
+    Type: String
+    NoEcho: true
+    Description: API token for Lawmatics
+
+Outputs:
+  LawmaticsApiEndpoint:
+    Description: API Gateway endpoint URL for Prod stage
+    Value: !Sub "https://${LawmaticsApi}.execute-api.${AWS::Region}.amazonaws.com/prod/modelcontextprotocol"

@@ -5,7 +5,6 @@ interface ApiResponse<T> {
 	data: T;
 	meta?: {
 		total?: number;
-		total_pages?: number;
 		limit_per_page?: number;
 		total_entries?: number;
 		total_pages?: number;
@@ -170,13 +169,11 @@ export class LawmaticsClientWrapper {
 	private apiToken: string;
 	private prospectCache: Cache<string, Prospect>;
 	private stageCache: Cache<string, Stage>;
-	private practiceAreaCache: Cache<string, PracticeArea>;
 
 	constructor(apiToken: string) {
 		this.apiToken = apiToken;
 		this.prospectCache = new Cache();
 		this.stageCache = new Cache();
-		this.practiceAreaCache = new Cache();
 	}
 
 	private async makeRequest<T = Record<string, UnknownValue>>(
