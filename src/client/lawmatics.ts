@@ -1,5 +1,5 @@
+import FormData from "form-data";
 import { Cache } from "./cache";
-
 // Define types for API responses
 interface ApiResponse<T> {
 	data: T;
@@ -559,7 +559,6 @@ export class LawmaticsClientWrapper {
 	): Promise<Record<string, unknown>> {
 		const url = `${this.baseUrl}/files`;
 		// Use require to avoid import dependency issues
-		const FormData = require("form-data");
 		const form = new FormData();
 
 		// Add form fields
