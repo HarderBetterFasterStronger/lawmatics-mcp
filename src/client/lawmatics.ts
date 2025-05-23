@@ -180,6 +180,24 @@ export interface TaskTag {
 	updated_at: string;
 }
 
+export interface RecurrenceRule {
+	type: "daily" | "weekly" | "monthly" | "yearly";
+	endOption?: boolean;
+	endDate?: string;
+	frequency?: number;
+	sunday?: boolean;
+	monday?: boolean;
+	tuesday?: boolean;
+	wednesday?: boolean;
+	thursday?: boolean;
+	friday?: boolean;
+	saturday?: boolean;
+	monthlyFrequency?: number;
+	dayOfMonth?: number;
+	month?: string;
+	dayOfMonthYear?: number;
+}
+
 export interface Task {
 	id: string;
 	type: string;
@@ -192,6 +210,12 @@ export interface Task {
 		tags: TaskTag[];
 		created_at: string;
 		updated_at: string;
+		recurrence_rule?: RecurrenceRule | null;
+		user_ids?: string[];
+		taskable_id?: string;
+		taskable_type?: string;
+		tag_ids?: string[];
+		assigned_by_id?: string;
 	};
 	relationships: {
 		users: {
@@ -617,5 +641,58 @@ export class LawmaticsClientWrapper {
 
 		const endpoint = `/tasks?${queryParams.toString()}`;
 		return this.makeRequest<ApiResponse<Task[]>>(endpoint);
+	}
+
+	/**
+	 * Create a new task
+	 * @param taskData Task data including name and other optional fields
+	 * @returns The created task
+	 */
+	async createTask(taskData: {
+		name: string;
+		description?: string;
+		due_date?: string;
+		user_ids?: string[];
+		priority?: "high" | "medium" | "low";
+		done?: boolean;
+		taskable_type?: "Prospect" | "Contact" | "Company" | "Client";
+		taskable_id?: string;
+		tag_ids?: string[];
+		assigned_by_id?: string;
+		recurrence_rule?: RecurrenceRule;
+	}): Promise<ApiResponse<Task>> {
+		const endpoint = "/tasks";
+
+		// Prepare the request body
+		const requestBody: {
+			name: string;
+			description?: string;
+			due_date?: string;
+			user_ids?: string[];
+			priority?: "high" | "medium" | "low";
+			done?: boolean;
+			taskable_type?: "Prospect" | "Contact" | "Company" | "Client";
+			taskable_id?: string;
+			tag_ids?: string[];
+			assigned_by_id?: string;
+			recurrence_rule?: RecurrenceRule;
+		} = {
+			name: taskData.name,
+		};
+
+		// Add optional fields if they exist
+		if (taskData.description !== undefined) requestBody.description = taskData.description;
+		if (taskData.due_date !== undefined) requestBody.due_date = taskData.due_date;
+		if (taskData.user_ids !== undefined) requestBody.user_ids = taskData.user_ids;
+		if (taskData.priority !== undefined) requestBody.priority = taskData.priority;
+		if (taskData.done !== undefined) requestBody.done = taskData.done;
+		if (taskData.taskable_type !== undefined) requestBody.taskable_type = taskData.taskable_type;
+		if (taskData.taskable_id !== undefined) requestBody.taskable_id = taskData.taskable_id;
+		if (taskData.tag_ids !== undefined) requestBody.tag_ids = taskData.tag_ids;
+		if (taskData.assigned_by_id !== undefined) requestBody.assigned_by_id = taskData.assigned_by_id;
+		if (taskData.recurrence_rule !== undefined)
+			requestBody.recurrence_rule = taskData.recurrence_rule;
+
+		return this.makeRequest<ApiResponse<Task>>(endpoint, "POST", requestBody);
 	}
 }
