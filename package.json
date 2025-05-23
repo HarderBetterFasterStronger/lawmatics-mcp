@@ -1,6 +1,7 @@
 {
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
+    "@types/bun": "^1.2.14",
     "bun": "^1.2.5",
     "husky": "^9.1.7",
     "shx": "^0.3.4"
