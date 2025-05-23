@@ -1,11 +1,10 @@
+import FormData from "form-data";
 import { Cache } from "./cache";
-
 // Define types for API responses
 interface ApiResponse<T> {
 	data: T;
 	meta?: {
 		total?: number;
-		total_pages?: number;
 		limit_per_page?: number;
 		total_entries?: number;
 		total_pages?: number;
@@ -182,13 +181,11 @@ export class LawmaticsClientWrapper {
 	private apiToken: string;
 	private prospectCache: Cache<string, Prospect>;
 	private stageCache: Cache<string, Stage>;
-	private practiceAreaCache: Cache<string, PracticeArea>;
 
 	constructor(apiToken: string) {
 		this.apiToken = apiToken;
 		this.prospectCache = new Cache();
 		this.stageCache = new Cache();
-		this.practiceAreaCache = new Cache();
 	}
 
 	private async makeRequest<T = Record<string, UnknownValue>>(
@@ -540,5 +537,85 @@ export class LawmaticsClientWrapper {
 		);
 
 		return response;
+	}
+
+	/**
+	 * Upload a file to Lawmatics
+	 * @param filePath Path to the file to upload
+	 * @param documentableType Type of entity to attach the file to (firm, client, matter, contact)
+	 * @param documentableId ID of the entity (not required for firm)
+	 * @param options Additional options (name, folderId, path)
+	 */
+	async uploadFile(
+		fileBuffer: Buffer,
+		fileName: string,
+		documentableType: "firm" | "client" | "matter" | "contact" = "firm",
+		documentableId?: string,
+		options?: {
+			name?: string;
+			folderId?: string;
+			path?: string[];
+		},
+	): Promise<Record<string, unknown>> {
+		const url = `${this.baseUrl}/files`;
+		// Use require to avoid import dependency issues
+		const form = new FormData();
+
+		// Add form fields
+		form.append("documentable_type", documentableType);
+		if (documentableId) form.append("documentable_id", documentableId);
+		if (options?.name) form.append("name", options.name);
+		if (options?.folderId) form.append("folder_id", options.folderId);
+		if (options?.path && Array.isArray(options.path)) {
+			form.append("path", JSON.stringify(options.path));
+		}
+
+		// Add file last
+		form.append("file", fileBuffer, fileName);
+
+		return new Promise((resolve, reject) => {
+			// Import types inline
+			const https = require("node:https");
+			const { IncomingMessage } = require("node:http");
+			const urlObj = new URL(url);
+
+			// Configure request
+			const headers = form.getHeaders();
+			headers.Authorization = `Bearer ${this.apiToken}`;
+
+			const options = {
+				method: "POST",
+				headers,
+				hostname: urlObj.hostname,
+				path: urlObj.pathname,
+			};
+
+			// Create request
+			const req = https.request(options, (res: typeof IncomingMessage) => {
+				let data = "";
+
+				res.on("data", (chunk: Buffer) => {
+					data += chunk;
+				});
+
+				res.on("end", () => {
+					if (res.statusCode >= 200 && res.statusCode < 300) {
+						try {
+							resolve(JSON.parse(data));
+						} catch (e: unknown) {
+							const error = e instanceof Error ? e : new Error(String(e));
+							reject(new Error(`Failed to parse response: ${error.message}`));
+						}
+					} else {
+						reject(new Error(`API request failed with status ${res.statusCode}: ${data}`));
+					}
+				});
+			});
+
+			req.on("error", (e: Error) => reject(new Error(`Request error: ${e.message}`)));
+
+			// Send the form data
+			form.pipe(req);
+		});
 	}
 }
