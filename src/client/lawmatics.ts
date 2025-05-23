@@ -220,6 +220,7 @@ export class LawmaticsClientWrapper {
 		endpoint: string,
 		method: "GET" | "POST" | "PUT" | "DELETE" = "GET",
 		body?: Record<string, UnknownValue>,
+		responseType: "json" | "arraybuffer" | "text" = "json",
 	): Promise<T> {
 		const url = `${this.baseUrl}${endpoint}`;
 
@@ -244,7 +245,14 @@ export class LawmaticsClientWrapper {
 				throw new Error(`API request failed with status ${response.status}`);
 			}
 
-			return (await response.json()) as T;
+			if (responseType === "json") {
+				return (await response.json()) as T;
+			}
+			if (responseType === "arraybuffer") {
+				const buffer = await response.arrayBuffer();
+				return buffer as unknown as T;
+			}
+			return (await response.text()) as unknown as T;
 		} catch (error) {
 			console.error(`Error making request to ${endpoint}:`, error);
 			throw error;
@@ -604,8 +612,14 @@ export class LawmaticsClientWrapper {
 	 *   const downloadInfo = await client.downloadDocument(fileId);
 	 */
 	async downloadDocument(fileId: string) {
-		const response = await this.makeRequest<ApiResponse<Document>>(`/files/download/${fileId}`);
-		return response;
+		// Use arraybuffer responseType to handle binary data
+		const buffer = await this.makeRequest<ArrayBuffer>(
+			`/files/download/${fileId}`,
+			"GET",
+			undefined,
+			"arraybuffer",
+		);
+		return { data: buffer };
 	}
 
 	/**

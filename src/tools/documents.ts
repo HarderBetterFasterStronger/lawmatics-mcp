@@ -56,12 +56,20 @@ export class DocumentTools extends BaseTools {
 	}
 
 	async downloadDocument(documentId: string): Promise<CallToolResult> {
-		const response = await this.client.getDocuments(documentId);
-		return this.toResult(JSON.stringify(response));
+		const response = await this.client.downloadDocument(documentId);
+
+		// The client now returns the document as an ArrayBuffer
+		// We need to convert it to a base64 string
+		if (response.data instanceof ArrayBuffer) {
+			const buffer = Buffer.from(response.data);
+			return this.toResult(buffer.toString("base64"));
+		}
+
+		return this.toResult("Error: Unexpected response format");
 	}
 
 	private formatDocument(document: Document) {
-		return `${document.attributes.name} (${document.attributes.file_type})`;
+		return `ID: ${document.id}, Name: ${document.attributes.name} (${document.attributes.file_type})`;
 	}
 
 	private formatDocumentList(documents: Document[]) {
