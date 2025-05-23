@@ -326,7 +326,7 @@ export class LawmaticsClientWrapper {
 		data: Record<string, UnknownValue>,
 	): Promise<ApiResponse<Prospect>> {
 		const response = await this.makeRequest<ApiResponse<Prospect>>(
-			`/prospects/${prospectId}`,
+			`/matters/${prospectId}`,
 			"PUT",
 			data,
 		);
@@ -337,6 +337,17 @@ export class LawmaticsClientWrapper {
 		}
 
 		return response;
+	}
+
+	/**
+	 * Delete a prospect/matter from Lawmatics
+	 * @param prospectId The ID of the prospect/matter to delete
+	 * @returns A promise resolving to an ApiResponse with the deletion result
+	 */
+	deleteProspect(prospectId: string): Promise<ApiResponse<unknown>> {
+		// Remove from cache if it exists
+		this.prospectCache.delete(prospectId);
+		return this.makeRequest<ApiResponse<unknown>>(`/prospects/${prospectId}`, "DELETE");
 	}
 
 	async searchProspects(
