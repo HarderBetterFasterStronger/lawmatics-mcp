@@ -45,6 +45,7 @@ export class ProspectTools extends BaseTools {
 				email: z.string().optional().describe("Email address of the prospect"),
 				phone: z.string().optional().describe("Phone number of the prospect"),
 				notes: z.string().optional().describe("Additional notes about the prospect"),
+				stage: z.string().optional().describe("ID of the stage to assign the prospect to"),
 			},
 			async (params) => await tools.updateProspect(params),
 		);
@@ -153,6 +154,7 @@ export class ProspectTools extends BaseTools {
 		email,
 		phone,
 		notes,
+		stage,
 	}: {
 		prospectId: string;
 		firstName?: string;
@@ -160,6 +162,7 @@ export class ProspectTools extends BaseTools {
 		email?: string;
 		phone?: string;
 		notes?: string;
+		stage?: string;
 	}): Promise<CallToolResult> {
 		const updateData: Record<string, UnknownValue> = {};
 		if (firstName) updateData.first_name = firstName;
@@ -167,6 +170,7 @@ export class ProspectTools extends BaseTools {
 		if (email) updateData.email = email;
 		if (phone) updateData.phone = phone;
 		if (notes) updateData.notes = notes;
+		if (stage) updateData.stage = stage;
 
 		const response = await this.client.updateProspect(prospectId, updateData);
 		const prospect = response?.data;
