@@ -11,33 +11,15 @@ type UnknownValue = string | number | boolean | object | null | undefined;
 
 export class ProspectTools extends BaseTools {
 	static create(client: LawmaticsClientWrapper, server: McpServer) {
-		const tools = new ProspectTools(client);
+		const tools = new ProspectTools(client); // TODO revisit this
 
 		server.tool(
 			"get_prospect",
 			"Get a Lawmatics matter / prospect by ID",
 			{
-				prospectId: z.string().describe("The ID of the matter / prospect to get"),
-				fields: z
-					.string()
-					.optional()
-					.describe(
-						"Comma-separated list of fields to include or 'all' for all fields, defaults to 'all' if not provided",
-					),
+				prospectId: z.string().describe("The ID of the matter/prospect as a string of digits"),
 			},
-			async ({ prospectId, fields }) => await tools.getProspect(prospectId, fields),
-		);
-
-		server.tool(
-			"list_prospects_with_optional_filtering",
-			"List Lawmatics matters / prospects with optional filtering",
-			{
-				fields: z
-					.string()
-					.optional()
-					.describe("Comma-separated list of fields to include or 'all' for all fields"),
-			},
-			async (params) => await tools.listProspects(params),
+			async ({ prospectId }) => await tools.getProspect(prospectId),
 		);
 
 		server.tool(
@@ -63,6 +45,7 @@ export class ProspectTools extends BaseTools {
 				email: z.string().optional().describe("Email address of the prospect"),
 				phone: z.string().optional().describe("Phone number of the prospect"),
 				notes: z.string().optional().describe("Additional notes about the prospect"),
+				stage: z.string().optional().describe("ID of the stage to assign the prospect to"),
 			},
 			async (params) => await tools.updateProspect(params),
 		);
@@ -124,28 +107,8 @@ export class ProspectTools extends BaseTools {
 		return tools;
 	}
 
-	async listProspects(params: { fields?: string }) {
-		const response = await this.client.getProspects({
-			fields: params.fields || "all",
-		});
-
-		const prospects = response?.data;
-		const total = response?.meta?.total || 0;
-
-		if (!prospects || !Array.isArray(prospects)) {
-			throw new Error("Failed to fetch matters / prospects");
-		}
-
-		if (prospects.length === 0) {
-			return this.toResult("No matters / prospects found.");
-		}
-
-		return this.toResult(`Result (${prospects.length} matters / prospects found${total > prospects.length ? ` of ${total} total` : ""}):
-${this.formatAsProspectList(prospects)}`);
-	}
-
-	async getProspect(prospectId: string, fields?: string) {
-		const response = await this.client.getProspect(prospectId, fields);
+	async getProspect(prospectId: string) {
+		const response = await this.client.getProspect(prospectId);
 		const prospect = response?.data;
 
 		if (!prospect)
@@ -191,6 +154,7 @@ ${this.formatAsProspectList(prospects)}`);
 		email,
 		phone,
 		notes,
+		stage,
 	}: {
 		prospectId: string;
 		firstName?: string;
@@ -198,6 +162,7 @@ ${this.formatAsProspectList(prospects)}`);
 		email?: string;
 		phone?: string;
 		notes?: string;
+		stage?: string;
 	}): Promise<CallToolResult> {
 		const updateData: Record<string, UnknownValue> = {};
 		if (firstName) updateData.first_name = firstName;
@@ -205,6 +170,7 @@ ${this.formatAsProspectList(prospects)}`);
 		if (email) updateData.email = email;
 		if (phone) updateData.phone = phone;
 		if (notes) updateData.notes = notes;
+		if (stage) updateData.stage = stage;
 
 		const response = await this.client.updateProspect(prospectId, updateData);
 		const prospect = response?.data;
