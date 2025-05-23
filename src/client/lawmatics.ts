@@ -7,7 +7,6 @@ interface ApiResponse<T> {
 		total?: number;
 		limit_per_page?: number;
 		total_entries?: number;
-		total_pages?: number;
 	};
 	links?: {
 		self?: string;
@@ -165,6 +164,35 @@ export interface PracticeArea {
 		color: string;
 		created_at: string;
 		updated_at: string;
+	};
+}
+
+export interface Document {
+	id: string;
+	type: "file";
+	attributes: {
+		name: string;
+		file_size: string;
+		created_at: string;
+		updated_at: string;
+		folder_id: string | null;
+		file_url: string;
+		file_name: string;
+		file_type: string;
+	};
+	relationships: {
+		documentable: {
+			data: {
+				id: string;
+				type: string;
+			};
+		};
+		parent_folder: {
+			data: null;
+		};
+		folder: {
+			data: null;
+		};
 	};
 }
 
@@ -536,6 +564,47 @@ export class LawmaticsClientWrapper {
 			`/practice_areas/${practiceAreaId}`,
 		);
 
+		return response;
+	}
+
+	/**
+	 * Retrieve all documents for a given prospect (matter).
+	 * @param prospectId The ID of the prospect (matter) to fetch documents for.
+	 * @returns A promise resolving to an ApiResponse containing an array of Document objects.
+	 *
+	 * Usage:
+	 *   const docs = await client.getDocuments(prospectId);
+	 */
+	async getDocuments(prospectId: string) {
+		const response = await this.makeRequest<ApiResponse<Document[]>>(
+			`/files?filter_by=matter_id&filter_on=${prospectId}`,
+		);
+		return response;
+	}
+
+	/**
+	 * Retrieve metadata for a specific document by file ID.
+	 * @param fileId The ID of the file/document to fetch metadata for.
+	 * @returns A promise resolving to an ApiResponse containing a single Document object.
+	 *
+	 * Usage:
+	 *   const docMeta = await client.getDocumentMetaData(fileId);
+	 */
+	async getDocumentMetaData(fileId: string) {
+		const response = await this.makeRequest<ApiResponse<Document>>(`/files/${fileId}?fields=all`);
+		return response;
+	}
+
+	/**
+	 * Download a document by file ID.
+	 * @param fileId The ID of the file/document to download.
+	 * @returns A promise resolving to an ApiResponse containing the Document object with download information.
+	 *
+	 * Usage:
+	 *   const downloadInfo = await client.downloadDocument(fileId);
+	 */
+	async downloadDocument(fileId: string) {
+		const response = await this.makeRequest<ApiResponse<Document>>(`/files/download/${fileId}`);
 		return response;
 	}
 

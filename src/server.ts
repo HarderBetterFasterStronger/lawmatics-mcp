@@ -2,6 +2,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { name, version } from "../package.json";
 import { LawmaticsClientWrapper } from "./client/lawmatics";
+import { DocumentTools } from "./tools/documents";
 import { FileTools } from "./tools/files";
 import { PracticeAreaTools } from "./tools/practice-areas";
 import { ProspectTools } from "./tools/prospects";
@@ -35,6 +36,7 @@ export function createServer(config: ServerConfig) {
 	StageTools.create(client, server);
 	PracticeAreaTools.create(client, server);
 	FileTools.create(client, server);
+	DocumentTools.create(client, server);
 
 	return { server, client };
 }
