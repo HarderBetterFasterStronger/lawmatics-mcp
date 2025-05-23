@@ -55,18 +55,18 @@ export class DocumentTools extends BaseTools {
 		return this.toResult(this.formatDocumentList(documents));
 	}
 
-  async downloadDocument(documentId: string): Promise<CallToolResult> {
+	async downloadDocument(documentId: string): Promise<CallToolResult> {
 		const response = await this.client.getDocuments(documentId);
 		return this.toResult(JSON.stringify(response));
 	}
 
-  private formatDocument(document: Document){
-    return `${document.attributes.name} (${document.attributes.file_type})`
-  }
+	private formatDocument(document: Document) {
+		return `${document.attributes.name} (${document.attributes.file_type})`;
+	}
 
-  private formatDocumentList(documents: Document[]){
-    const doucmentList = documents.map(doc => `* ${this.formatDocument(doc)}`).join("\n")
+	private formatDocumentList(documents: Document[]) {
+		const doucmentList = documents.map((doc) => `* ${this.formatDocument(doc)}`).join("\n");
 
-    return `Available Documents:\n\n${doucmentList}\n`
-  }
+		return `Available Documents:\n\n${doucmentList}\n`;
+	}
 }
