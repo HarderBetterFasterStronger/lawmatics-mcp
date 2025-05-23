@@ -169,6 +169,46 @@ export interface PracticeArea {
 	};
 }
 
+export interface TaskTag {
+	id: number;
+	firm_id: number;
+	name: string;
+	key: string;
+	description: string | null;
+	color: string;
+	created_at: string;
+	updated_at: string;
+}
+
+export interface Task {
+	id: string;
+	type: string;
+	attributes: {
+		name: string;
+		description: string | null;
+		due_date: string | null;
+		done: boolean;
+		priority: string;
+		tags: TaskTag[];
+		created_at: string;
+		updated_at: string;
+	};
+	relationships: {
+		users: {
+			data: Array<{
+				id: string;
+				type: string;
+			}>;
+		};
+		taskable: {
+			data: {
+				id: string;
+				type: string;
+			} | null;
+		};
+	};
+}
+
 /**
  * This is a thin wrapper over Lawmatics API.
  *
@@ -540,5 +580,42 @@ export class LawmaticsClientWrapper {
 		);
 
 		return response;
+	}
+
+	/**
+	 * Get a list of tasks with optional filtering
+	 * @param params Filtering parameters
+	 * @returns List of tasks with pagination info
+	 */
+	async getTasks(
+		params: {
+			matter_id?: string;
+			prospect_id?: string;
+			contact_id?: string;
+			company_id?: string;
+			client_id?: string;
+			user_id?: string;
+			fields?: string;
+			page?: number;
+			limit?: number;
+		} = {},
+	): Promise<ApiResponse<Task[]>> {
+		const queryParams = new URLSearchParams();
+
+		// Add optional filters
+		if (params.matter_id) queryParams.append("matter_id", params.matter_id);
+		if (params.prospect_id) queryParams.append("prospect_id", params.prospect_id);
+		if (params.contact_id) queryParams.append("contact_id", params.contact_id);
+		if (params.company_id) queryParams.append("company_id", params.company_id);
+		if (params.client_id) queryParams.append("client_id", params.client_id);
+		if (params.user_id) queryParams.append("user_id", params.user_id);
+
+		// Add pagination and fields
+		queryParams.append("fields", params.fields || "all");
+		if (params.page) queryParams.append("page", params.page.toString());
+		if (params.limit) queryParams.append("limit", params.limit.toString());
+
+		const endpoint = `/tasks?${queryParams.toString()}`;
+		return this.makeRequest<ApiResponse<Task[]>>(endpoint);
 	}
 }
