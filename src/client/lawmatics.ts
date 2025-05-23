@@ -541,4 +541,19 @@ export class LawmaticsClientWrapper {
 
 		return response;
 	}
+
+  async getDocuments(prospectId: string){
+    const response = await this.makeRequest<ApiResponse<Stage[]>>(`/files?filter_by=matter_id&filter_on=${prospectId}`);
+    return response;
+  }
+
+  async getDocumentMetaData(fileId: string){
+    const response = await this.makeRequest<ApiResponse<Stage[]>>(`/files/${fileId}?fields=all`);
+    return response;
+  }
+
+  async downloadDocument(fileId: string){
+    const response = await this.makeRequest<ApiResponse<Stage[]>>(`/files/download/${fileId}`);
+    return response;
+  }
 }
