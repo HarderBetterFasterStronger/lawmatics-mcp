@@ -1047,13 +1047,13 @@ Note - Setting the **Email Address** through a **Prospect** (Matter) will set it
 
 To retrieve a specific campaign, use the following format: TypeofCampaign-id
 
-An example of retrieving a marketing campaign would be:  
+An example of retrieving a marketing campaign would be:
 /v1/email_campaigns/MarketingCampaign-1
 
-An example of retrieving a recurring campaign would be:  
+An example of retrieving a recurring campaign would be:
 /v1/email_campaigns/RecurringCampaign-1
 
-An example of retrieving a date campaign would be:  
+An example of retrieving a date campaign would be:
 /v1/email_campaigns/DateCampaign-1`,
 			inputSchema: { type: "object", properties: {} },
 			method: "get",
@@ -1084,10 +1084,10 @@ An example of retrieving a date campaign would be:
 
 To retrieve a specific campaign, use the following format: TypeofCampaign-id
 
-An example of retrieving statistics of a marketing campaign would be:  
+An example of retrieving statistics of a marketing campaign would be:
 /v1/email_campaign_stats/MarketingCampaign-1
 
-An example of retrieving statistics of a date campaign would be:  
+An example of retrieving statistics of a date campaign would be:
 /v1/email_campaign_stats/DateCampaign-1`,
 			inputSchema: { type: "object", properties: {} },
 			method: "get",
@@ -1455,7 +1455,7 @@ Max allowed file size is 1GB. However, we recommend to avoid files greater than 
 		{
 			name: "downloadfile",
 			description: `*   When testing from **Postman** please click on '**Send and download**' option instead of '**Send**'.
-    
+
 
 *   a 404 can be sent case the file isn't found.`,
 			inputSchema: { type: "object", properties: {} },
@@ -2604,8 +2604,8 @@ Warning: This is irreversible!`,
 			name: "createtransaction",
 			description: `Create a new Transaction
 
-**Optional Fields**: invoice_number, invoice_id, note  
-  
+**Optional Fields**: invoice_number, invoice_id, note
+
 **invoice_number or invoice_id:** only one should be specified
 
 **transactable**: Prospect, Contact, Company with which to associate the transaction
@@ -2715,7 +2715,7 @@ Warning: This is irreversible!`,
 
 **Required Fields**: informationable, label, info
 
-  
+
 **info:** The Phone Number string.
 
 **label**: The **Phone Number**'s label e.g. Primary.
@@ -2948,16 +2948,16 @@ as well as all the regular fields as referenced by our Param Guide (most fields 
 
 **taskable_type, taskable_id:** Record type, ID the **Task** is associated with (Prospect (Matter), Contact, Company, Client).
 
-**tag_ids**: **Tags** to associate to this **Task.  
-  
+**tag_ids**: **Tags** to associate to this **Task.
+
 assigned_by_id:** The **user id** the task is assigned by.
 
-**recurrence_rule: Json object.** Following are the fields with which we can create a recurrence_rule.  
+**recurrence_rule: Json object.** Following are the fields with which we can create a recurrence_rule.
 RecurrenceType options are the following = 'daily' or 'weekly' or monthly' or 'yearly';
 
-fields of the json object you can choose from:  
-type: **RecurrenceType**;  
-endOption?: boolean;  
+fields of the json object you can choose from:
+type: **RecurrenceType**;
+endOption?: boolean;
 endDate?: Date;
 
 **// If you choose type to be daily**
@@ -2966,20 +2966,20 @@ frequency?: number;
 
 **// If you choose type to be weekly**
 
-sunday?: boolean;  
-monday?: boolean;  
-tuesday?: boolean;  
-wednesday?: boolean;  
-thursday?: boolean;  
-friday?: boolean;  
+sunday?: boolean;
+monday?: boolean;
+tuesday?: boolean;
+wednesday?: boolean;
+thursday?: boolean;
+friday?: boolean;
 saturday?: boolean;
 
-**// If you choose type to be monthly**  
-monthlyFrequency?: number;  
+**// If you choose type to be monthly**
+monthlyFrequency?: number;
 dayOfMonth?: number;
 
-**// If you choose type to be yearly**  
-month?: string;  
+**// If you choose type to be yearly**
+month?: string;
 dayOfMonthYear?: number;`,
 			inputSchema: {
 				type: "object",
@@ -3073,12 +3073,12 @@ as well as all the regular fields as referenced by our Param Guide (most fields 
 
 **assigned_by_id:** The **user id** the task is assigned by.
 
-**recurrence_rule: Json object.** Following are the fields with which we can create a recurrence_rule.  
+**recurrence_rule: Json object.** Following are the fields with which we can create a recurrence_rule.
 RecurrenceType options are the following = 'daily' or 'weekly' or monthly' or 'yearly';
 
-fields of the json object you can choose from:  
-type: **RecurrenceType**;  
-endOption?: boolean;  
+fields of the json object you can choose from:
+type: **RecurrenceType**;
+endOption?: boolean;
 endDate?: Date;
 
 **// If you choose type to be daily**
@@ -3087,20 +3087,20 @@ frequency?: number;
 
 **// If you choose type to be weekly**
 
-sunday?: boolean;  
-monday?: boolean;  
-tuesday?: boolean;  
-wednesday?: boolean;  
-thursday?: boolean;  
-friday?: boolean;  
+sunday?: boolean;
+monday?: boolean;
+tuesday?: boolean;
+wednesday?: boolean;
+thursday?: boolean;
+friday?: boolean;
 saturday?: boolean;
 
-**// If you choose type to be monthly**  
-monthlyFrequency?: number;  
+**// If you choose type to be monthly**
+monthlyFrequency?: number;
 dayOfMonth?: number;
 
-**// If you choose type to be yearly**  
-month?: string;  
+**// If you choose type to be yearly**
+month?: string;
 dayOfMonthYear?: number;`,
 			inputSchema: {
 				type: "object",
@@ -3294,18 +3294,18 @@ mentioned_user_ids: list of user ids.`,
 		"createcomment",
 		{
 			name: "createcomment",
-			description: `Creates a **comment** on a task in Lawmatics.  
+			description: `Creates a **comment** on a task in Lawmatics.
 **optional field:** mentioned_user_ids
 
 mentioned_user_ids: list of user ids.
 
 Feel free to add HTML tags to format your comments.
 
-Following is a simple comment with formatting example using bold *italic* etc.  
+Following is a simple comment with formatting example using bold *italic* etc.
 
 This is a simple comment with formatting example using **bold** *italics*
 
-Another example of comment with mentioned users.  
+Another example of comment with mentioned users.
 
 Hi its a new comment on task 45 @Jasmine Rattan`,
 			inputSchema: {
@@ -3550,6 +3550,24 @@ as well as all the regular fields as referenced by our Param Guide (most fields 
 			pathTemplate: "/v1/users/me",
 			executionParameters: [],
 			requestBodyContentType: undefined,
+			securityRequirements: [{ oauth2: [] }, { bearerAuth: [] }],
+		},
+	],
+	[
+		"timeline activities",
+		{
+			name: "timeline activities",
+			description: `Return recent activities for a prospect`,
+			inputSchema: {
+				type: "object",
+				properties: {
+					filter_on: { type: "string" },
+				},
+			},
+			method: "get",
+			pathTemplate: "/v1/activities?filter_by=matter_id",
+			executionParameters: [],
+			requestBodyContentType: "application/json",
 			securityRequirements: [{ oauth2: [] }, { bearerAuth: [] }],
 		},
 	],

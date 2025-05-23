@@ -35,6 +35,18 @@ export interface Prospect {
 	url?: string;
 	[key: string]: UnknownValue;
 }
+export interface TimelineActivity {
+	id: string;
+	type: "timeline_activity";
+	attributes: {
+		key: string;
+		type: string;
+		detail_keys: Record<string, unknown>;
+		created_at: string;
+		updated_at: string;
+	};
+	relationships: Record<string, unknown>;
+}
 
 /**
  * This is a thin wrapper over Lawmatics API.
@@ -193,6 +205,32 @@ export class LawmaticsClientWrapper {
 			// Update the cache with the found prospect
 			this.prospectCache.set(response.data.id, response.data);
 		}
+
+		return response;
+	}
+
+	/**
+	 * Find a prospect by name using fuzzy search (case-insensitive)
+	 * @param matterId
+	 * @returns A list of timeline activities for the matter
+	 */
+	async findTimelineActivitiesForProspect(
+		matterId: string,
+	): Promise<ApiResponse<TimelineActivity[]>> {
+		const endpoint = `/activities?filter_by=matter_id&filter_on=${matterId}`;
+		const response = await this.makeRequest<ApiResponse<TimelineActivity[]>>(endpoint);
+
+		return response;
+	}
+
+	/**
+	 * Find a prospect by name using fuzzy search (case-insensitive)
+	 * @param matterId
+	 * @returns A list of timeline activities for the matter
+	 */
+	async findTimelineActivity(activityId: string): Promise<ApiResponse<Prospect>> {
+		const endpoint = `/activities/${activityId}`;
+		const response = await this.makeRequest<ApiResponse<Prospect>>(endpoint);
 
 		return response;
 	}
