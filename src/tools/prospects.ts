@@ -104,6 +104,15 @@ export class ProspectTools extends BaseTools {
 			async ({ caseTitle }) => await tools.findProspectByCaseTitle(caseTitle),
 		);
 
+		server.tool(
+			"delete_prospect",
+			"Delete a Lawmatics matter / prospect",
+			{
+				prospectId: z.string().describe("The ID of the matter/prospect to delete"),
+			},
+			async ({ prospectId }) => await tools.deleteProspect(prospectId),
+		);
+
 		return tools;
 	}
 
@@ -316,6 +325,18 @@ ${details}`;
 			);
 		}
 	}
+
+	async deleteProspect(prospectId: string): Promise<CallToolResult> {
+		try {
+			await this.client.deleteProspect(prospectId);
+			return this.toResult(`Matter / Prospect with ID ${prospectId} successfully deleted.`);
+		} catch (error) {
+			throw new Error(
+				`Failed to delete matter / prospect with ID: ${prospectId}. ${error instanceof Error ? error.message : String(error)}`,
+			);
+		}
+	}
+
 	private formatAsProspectList(
 		prospects: Prospect[],
 		options: { truncate?: boolean } = {},
