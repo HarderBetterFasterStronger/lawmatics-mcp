@@ -7,6 +7,7 @@ import { FileTools } from "./tools/files";
 import { PracticeAreaTools } from "./tools/practice-areas";
 import { ProspectTools } from "./tools/prospects";
 import { StageTools } from "./tools/stages";
+import { TasksTools } from "./tools/tasks";
 
 interface ServerConfig {
 	apiToken?: string;
@@ -37,6 +38,7 @@ export function createServer(config: ServerConfig) {
 	PracticeAreaTools.create(client, server);
 	FileTools.create(client, server);
 	DocumentTools.create(client, server);
+	TasksTools.create(client, server);
 
 	return { server, client };
 }

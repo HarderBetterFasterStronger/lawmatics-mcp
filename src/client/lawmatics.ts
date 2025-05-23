@@ -167,6 +167,70 @@ export interface PracticeArea {
 	};
 }
 
+export interface TaskTag {
+	id: number;
+	firm_id: number;
+	name: string;
+	key: string;
+	description: string | null;
+	color: string;
+	created_at: string;
+	updated_at: string;
+}
+
+export interface RecurrenceRule {
+	type: "daily" | "weekly" | "monthly" | "yearly";
+	endOption?: boolean;
+	endDate?: string;
+	frequency?: number;
+	sunday?: boolean;
+	monday?: boolean;
+	tuesday?: boolean;
+	wednesday?: boolean;
+	thursday?: boolean;
+	friday?: boolean;
+	saturday?: boolean;
+	monthlyFrequency?: number;
+	dayOfMonth?: number;
+	month?: string;
+	dayOfMonthYear?: number;
+}
+
+export interface Task {
+	id: string;
+	type: string;
+	attributes: {
+		name: string;
+		description: string | null;
+		due_date: string | null;
+		done: boolean;
+		priority: string;
+		tags: TaskTag[];
+		created_at: string;
+		updated_at: string;
+		recurrence_rule?: RecurrenceRule | null;
+		user_ids?: string[];
+		taskable_id?: string;
+		taskable_type?: string;
+		tag_ids?: string[];
+		assigned_by_id?: string;
+	};
+	relationships: {
+		users: {
+			data: Array<{
+				id: string;
+				type: string;
+			}>;
+		};
+		taskable: {
+			data: {
+				id: string;
+				type: string;
+			} | null;
+		};
+	};
+}
+
 export interface Document {
 	id: string;
 	type: "file";
@@ -584,6 +648,96 @@ export class LawmaticsClientWrapper {
 		);
 
 		return response;
+	}
+
+	/**
+	 * Get a list of tasks with optional filtering
+	 * @param params Filtering parameters
+	 * @returns List of tasks with pagination info
+	 */
+	async getTasks(
+		params: {
+			matter_id?: string;
+			prospect_id?: string;
+			contact_id?: string;
+			company_id?: string;
+			client_id?: string;
+			user_id?: string;
+			fields?: string;
+			page?: number;
+			limit?: number;
+		} = {},
+	): Promise<ApiResponse<Task[]>> {
+		const queryParams = new URLSearchParams();
+
+		// Add optional filters
+		if (params.matter_id) queryParams.append("matter_id", params.matter_id);
+		if (params.prospect_id) queryParams.append("prospect_id", params.prospect_id);
+		if (params.contact_id) queryParams.append("contact_id", params.contact_id);
+		if (params.company_id) queryParams.append("company_id", params.company_id);
+		if (params.client_id) queryParams.append("client_id", params.client_id);
+		if (params.user_id) queryParams.append("user_id", params.user_id);
+
+		// Add pagination and fields
+		queryParams.append("fields", params.fields || "all");
+		if (params.page) queryParams.append("page", params.page.toString());
+		if (params.limit) queryParams.append("limit", params.limit.toString());
+
+		const endpoint = `/tasks?${queryParams.toString()}`;
+		return this.makeRequest<ApiResponse<Task[]>>(endpoint);
+	}
+
+	/**
+	 * Create a new task
+	 * @param taskData Task data including name and other optional fields
+	 * @returns The created task
+	 */
+	async createTask(taskData: {
+		name: string;
+		description?: string;
+		due_date?: string;
+		user_ids?: string[];
+		priority?: "high" | "medium" | "low";
+		done?: boolean;
+		taskable_type?: "Prospect" | "Contact" | "Company" | "Client";
+		taskable_id?: string;
+		tag_ids?: string[];
+		assigned_by_id?: string;
+		recurrence_rule?: RecurrenceRule;
+	}): Promise<ApiResponse<Task>> {
+		const endpoint = "/tasks";
+
+		// Prepare the request body
+		const requestBody: {
+			name: string;
+			description?: string;
+			due_date?: string;
+			user_ids?: string[];
+			priority?: "high" | "medium" | "low";
+			done?: boolean;
+			taskable_type?: "Prospect" | "Contact" | "Company" | "Client";
+			taskable_id?: string;
+			tag_ids?: string[];
+			assigned_by_id?: string;
+			recurrence_rule?: RecurrenceRule;
+		} = {
+			name: taskData.name,
+		};
+
+		// Add optional fields if they exist
+		if (taskData.description !== undefined) requestBody.description = taskData.description;
+		if (taskData.due_date !== undefined) requestBody.due_date = taskData.due_date;
+		if (taskData.user_ids !== undefined) requestBody.user_ids = taskData.user_ids;
+		if (taskData.priority !== undefined) requestBody.priority = taskData.priority;
+		if (taskData.done !== undefined) requestBody.done = taskData.done;
+		if (taskData.taskable_type !== undefined) requestBody.taskable_type = taskData.taskable_type;
+		if (taskData.taskable_id !== undefined) requestBody.taskable_id = taskData.taskable_id;
+		if (taskData.tag_ids !== undefined) requestBody.tag_ids = taskData.tag_ids;
+		if (taskData.assigned_by_id !== undefined) requestBody.assigned_by_id = taskData.assigned_by_id;
+		if (taskData.recurrence_rule !== undefined)
+			requestBody.recurrence_rule = taskData.recurrence_rule;
+
+		return this.makeRequest<ApiResponse<Task>>(endpoint, "POST", requestBody);
 	}
 
 	/**
