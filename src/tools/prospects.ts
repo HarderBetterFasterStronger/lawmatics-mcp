@@ -1,4 +1,4 @@
-import type { LawmaticsClientWrapper } from "@/client/lawmatics";
+import type { LawmaticsClientWrapper, TimelineActivity } from "@/client/lawmatics";
 import type { Prospect } from "@/client/lawmatics";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
@@ -101,6 +101,15 @@ export class ProspectTools extends BaseTools {
 				phone: z.string().describe("Phone number to search for"),
 			},
 			async ({ phone }) => await tools.findProspectByPhone(phone),
+		);
+
+		server.tool(
+			"get_timeline_activities_for_prospect",
+			"Find recent activities for a Lawmatics prospect",
+			{
+				matterId: z.string().describe("Prospect id to search for"),
+			},
+			async ({ matterId }) => await tools.findTimelineActivitiesForProspect(matterId),
 		);
 
 		server.tool(
@@ -268,6 +277,38 @@ ${this.formatAsProspectList(prospects)}`);
 				`Failed to find matter / prospect by email: "${email}". ${error instanceof Error ? error.message : String(error)}`,
 			);
 		}
+	}
+
+	async findTimelineActivitiesForProspect(matterId: string) {
+		try {
+			const response = await this.client.findTimelineActivitiesForProspect(matterId);
+			const activities = response?.data;
+
+			if (!activities) {
+				return this.toResult(`No activities were found for prospect with id: "${matterId}".`);
+			}
+
+			return this.toResult(this.formatTimelineActivitiesList(activities));
+		} catch (error) {
+			console.error(error);
+			throw new Error(
+				`Failed to find timeline activities: "${matterId}". ${error instanceof Error ? error.message : String(error)}`,
+			);
+		}
+	}
+
+	private formatTimelineActivitiesList(activities: TimelineActivity[]) {
+		return activities
+			.map((actvivity) => {
+				const title = actvivity.attributes.key.replace(".", " ");
+				const details = JSON.stringify(actvivity.attributes.detail_keys, null, 2);
+
+				return `Activity:${title}
+
+Details:
+${details}`;
+			})
+			.join("\n\n");
 	}
 
 	async findProspectByPhone(phone: string) {
